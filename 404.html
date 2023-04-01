@@ -244,23 +244,24 @@
             this.userInfo = JSON.parse(userInfoString);
 
 
-        //     if(this.userInfo=null){
-        //         axios.get("http://127.0.0.1:8080/users/get",{withCredentials: true}).then((res)=>{
-        //             if(res.data.code==2001){
-        //
-        //
-        //             }else {
-        //                 localStorage.removeItem("userInfo");
-        //                 this.$message.error("您的登录已过期，请重新登录。三秒后自动跳转至登录页面");
-        //                 setTimeout(function jumpToLogin() {
-        //                         window.location.href='/login.html';
-        //
-        //                     }
-        //                     ,3000);
-        //             }
-        //         })
-        //     }
-        //
+            if(this.userInfo==null){
+                console.log("_________");
+                axios.get("http://127.0.0.1:8080/users/get",{withCredentials: true}).then((res)=>{
+                    if(res.data.code==2001){
+
+
+                    }else {
+                        localStorage.removeItem("userInfo");
+                        this.$message.error("您的登录已过期，请重新登录。三秒后自动跳转至登录页面");
+                        setTimeout(function jumpToLogin() {
+                                window.location.href='/login.html';
+
+                            }
+                            ,3000);
+                    }
+                })
+            }
+
         },
     });
     function jump() {
