@@ -1,6 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-
+<style>
+    .avatar-uploader .el-upload {
+        border: 1px dashed #d9d9d9;
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .avatar-uploader .el-upload:hover {
+        border-color: #409EFF;
+    }
+    .avatar-uploader-icon {
+        font-size: 28px;
+        color: #8c939d;
+        width: 178px;
+        height: 178px;
+        line-height: 178px;
+        text-align: center;
+    }
+    .avatar {
+        width: 178px;
+        height: 178px;
+        display: block;
+    }
+</style>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
@@ -176,7 +200,91 @@
                     </div>
                 </nav>
                 <div class="container-fluid">
-                    <h3 class="text-dark mb-1">My</h3>
+                    <div class="container">
+                        <div class="block-heading" style="padding-top: 0px;">
+                            <h2 class="text-primary this-title" style="margin-top: 100px; text-align: center">绑定学校,完善信息<br></h2>
+                            <p class="this-title"  style="text-align: center">教师用户完成绑定后需等待学校统一认证后方可正常使用</p>
+                        </div>
+                        <form action="index.html" method="post" class="profile-form" enctype="multipart/form-data" role="form" style="width:40%;margin: 0 auto;">
+                            <div class="form-group mb-3"><label class="form-label">上传头像(非必填)</label>
+                                <el-upload
+                                        class="avatar-uploader"
+                                        action="/files/uploadAvatar"
+                                        :show-file-list="false"
+                                        :on-success="handleAvatarSuccess"
+                                        :before-upload="beforeAvatarUpload">
+                                    <img v-if="imageUrl" :src="imageUrl" class="avatar">
+                                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                                </el-upload>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">个人简介(非必填)</label>
+                                <input v-model="formData.intro" class="form-control" type="text" placeholder="这个人很懒，什么都没有写" name="intro" required="">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">真实姓名</label>
+                                <input v-model="formData.name" class="form-control" type="text" placeholder="张三" name="name" required="required">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">我的学校</label>
+                                <el-select v-model="formData.schoolId" filterable placeholder="我的学校">
+                                    <el-option
+                                            v-for="item in schools"
+                                            :key="item.schoolName"
+                                            :label="item.schoolName"
+                                            :value="item.schoolId">
+                                        <div style="display: flex;justify-content: center;align-content: center">
+                                            <el-avatar size="small" :src="item.imagePath"></el-avatar>
+                                            <label style="text-align: center">{{item.schoolName}}</label>
+                                        </div>
+                                    </el-option>
+
+                                </el-select>
+                            </div>
+                            <div class="form-group mb-3"><label class="form-label">确认您的身份</label>
+                                <br>
+                                <el-radio v-model="formData.identity" label="0" border>学生</el-radio>
+                                <el-radio v-model="formData.identity" label="3" border>教师</el-radio>
+                            </div>
+                            <div class="form-group mb-3" v-if="formData.identity==0">
+                                <label class="form-label">学号</label>
+                                <input v-model="formData.personId" class="form-control" type="text" placeholder="202200000000" name="personId" required="required">
+                            </div>
+                            <div class="form-group mb-3" v-else-if="formData.identity==3"><label class="form-label">教工号(教师账户需要待学校管理员统一认证后方可正常使用)</label><input v-model="formData.personId" class="form-control"
+                                                                                                                                           type="text" autocomplete="off" placeholder="6100000" name="personId"
+                                                                                                                                           title="教工号" required="required"></div>
+                            <span>
+                <div class="form-group mb-3"><label class="form-label">邮箱(非必填)</label>
+                <br>
+                    <div style="text-align: center;display: flex; justify-content: space-between;">
+  <input v-model="formData.email" class="form-control" type="email" autocomplete="off" required="" placeholder="xxx@stu.hunau.edu.cn" name="email" title="输入您的邮箱" style="display: inline-block;width: 75%; float: left;">
+  <button class="btn btn-primary" type="button" style="display: inline-block;float: right;margin-top: -20px; background-color: white; color:#adb5bd;" type="button" @click="sendEmail">发送验证码</button>
+</div>
+
+                    <!--                <input class="form-control"-->
+                    <!--                    type="email" autocomplete="off" required="" placeholder="xxx@stu.hunau.edu.cn" name="email"-->
+                    <!--                          title="输入您的邮箱"  style="width: 75%; float: left;">-->
+                    <!--                    <button  class="btn btn-primary" style="float: right;margin-top: -20px; background-color: white; color:#adb5bd;" type="button">发送验证码</button>-->
+                </div>
+
+
+            </span>
+                            <br>
+                            <div class="form-group mb-3">
+                                <label class="form-label">邮箱验证码</label>
+                                <input class="form-control" type="text" placeholder="" name="verifyCode" required="" v-model="formData.verifyCode">
+                            </div>
+                            <!-- <span><input type="number" name="" id=""></span> -->
+                            <br>
+                            <hr style="margin-top: 30px;margin-bottom: 10px;">
+                            <div class="form-group mb-3" >
+                                <button class="btn btn-primary d-block w-100" type="button"  @click="submit">
+                                    <i class="fas fa-save"></i>&nbsp;完成</button></div>
+                        </form>
+                        <div style="text-align: center">
+                            <el-button @click="jump" type="info" plain >跳过</el-button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <footer class="bg-white sticky-footer"></footer>
@@ -186,6 +294,122 @@
     <script src="assets/js/script.min.js?h=9d17dc34c7092d02ce216040067c0268"></script>
     <script src="assets/js/vue-2.js"></script>
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="assets/js/vue@2"></script>
+    <script src="assets/js/axios.min.js"></script>
 </body>
 
 </html>
+
+<script>
+    var app = new Vue({
+        el: '#wrapper',
+        data:{
+            schools:[],
+            imageUrl: '',
+            userInfo:null,
+            formData:{
+                intro:"",
+                identity: '',
+                schoolId: "",
+                personId: '',
+                name: "",
+                company: "",
+                email: "",
+                verifyCode: ""
+            },
+        },
+
+        methods:{
+            jump(){
+                location.href='index.html';
+            },
+            submit(){
+                if(this.formData.email!=""&&this.formData.verifyCode==""){
+                    this.$message.error("请输入验证码");
+                }else {
+                    axios.put("http://127.0.0.1:8080/users/completeInfo",this.formData,{withCredentials: true}).then((res)=>{
+                        if(res.data.code==2001){
+                            this.$message.success(res.data.msg);
+                            let userInfoString = JSON.stringify(res.data.data);
+                            // 将字符串存入 localstorage
+                            localStorage.setItem('userInfo', userInfoString);
+                            setTimeout(function jumpToLogin() {
+                                    window.location.href='/my.html';
+                                }
+                                ,3000);
+                        }else{
+                            this.$message.error(res.data.msg);
+                        }
+                    }).catch(function (err) {
+                        console.log(err);
+                        this.$message.error("服务异常，请联系管理员");
+                    })
+                }
+            },
+            handleAvatarSuccess(res, file) {
+                if(res.code==2001) {
+                    this.$message.success(res.msg);
+                    this.imageUrl = URL.createObjectURL(file.raw);
+                    this.userInfo.avatarPath=res.data;
+                    let userInfoString = JSON.stringify(this.userInfo);
+                    // 将字符串存入 localstorage
+                    localStorage.setItem('userInfo', userInfoString);
+
+                }else {
+                    this.$message.error(res.msg);
+                }
+            },
+            beforeAvatarUpload(file) {
+                const isJPG = file.type === 'image/jpeg'||file.type === 'image/png'||file.type === 'image/jpg';
+                const isLt2M = file.size / 1024 / 1024 < 10;
+
+                if (!isJPG) {
+                    this.$message.error('上传头像图片只能是 JPG JPEG 或 PNG 格式!');
+
+                }
+                if (!isLt2M) {
+                    this.$message.error('上传头像图片大小不能超过 10MB!');
+                }
+                return isJPG && isLt2M;
+            },
+
+            sendEmail(){
+                if(this.formData.email==""){
+                    this.$message.error('请输入邮箱');
+                    return;
+                }
+                axios.get("http://127.0.0.1:8080/users/sendEmail/"+this.formData.email,{withCredentials: true}).then((resp)=> {
+                    // _this.reg_msg = resp.data;
+                    if(resp.data.code==2000){
+                        this.$message.error(resp.data.msg);
+                    }else if(resp.data.code==2001){
+                        this.$message.success(resp.data.msg);
+                    }
+
+                })
+            },
+
+        },
+        created(){
+            let userInfoString = localStorage.getItem('userInfo');
+
+            // 将字符串转换回 JavaScript 对象
+            this.userInfo = JSON.parse(userInfoString);
+            axios.get("http://127.0.0.1:8080/users/school/",{withCredentials: true}).then((resp)=> {
+                // _this.reg_msg = resp.data;
+                if(resp.data.code==2000){
+                    this.$message.error(resp.data.msg);
+                }else if(resp.data.code==2001){
+                    this.schools = resp.data.data;
+                }
+
+            }).catch(function (err) {
+                console.log(err);
+                this.$message.error("获取学校失败")
+            })
+        }
+
+
+
+    })
+</script>

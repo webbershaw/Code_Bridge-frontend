@@ -12,7 +12,7 @@
 </head>
 
 <body class="bg-gradient-primary">
-    <div class="container">
+    <div class="container" id="login">
         <div class="row justify-content-center">
             <div class="col-md-9 col-lg-12 col-xl-10">
                 <div class="card shadow-lg o-hidden border-0 my-5">
@@ -27,14 +27,14 @@
                                         <h4 class="text-dark mb-4">欢迎回来！</h4>
                                     </div>
                                     <form class="user">
-                                        <div class="mb-3"><input class="form-control form-control-user" type="tel" id="exampleInputEmail" aria-describedby="emailHelp" placeholder="输入您的电话号码" name="tel"></div>
-                                        <div class="mb-3"><input class="form-control form-control-user" type="password" id="exampleInputPassword" placeholder="输入您的密码" name="pwd"></div>
+                                        <div class="mb-3"><input class="form-control form-control-user" type="tel" id="exampleInputEmail" aria-describedby="emailHelp" placeholder="输入您的电话号码" v-model="formData.tel" name="tel"></div>
+                                        <div class="mb-3"><input class="form-control form-control-user" type="password" id="exampleInputPassword" placeholder="输入您的密码" v-model="formData.pwd" name="pwd"></div>
                                         <div class="mb-3">
                                             <div class="custom-control custom-checkbox small">
                                                 <div class="form-check"><input class="form-check-input custom-control-input" type="checkbox" id="formCheck-1"><label class="form-check-label custom-control-label" for="formCheck-1">记住我</label></div>
                                             </div>
-                                        </div><button class="btn btn-primary d-block btn-user w-100" type="submit">立即登录</button>
-                                        <hr><a class="btn btn-primary d-block btn-google btn-user w-100 mb-2" role="button"><i class="fas fa-phone-alt"></i>&nbsp; 用电话号码登录</a><a class="btn btn-primary bg-success d-block btn-facebook btn-user w-100" role="button"><i class="fab fa-weixin"></i>&nbsp; 用微信登录</a>
+                                        </div><button class="btn btn-primary d-block btn-user w-100" type="button" @click="submit">立即登录</button>
+                                        <hr><a class="btn btn-primary d-block btn-google btn-user w-100 mb-2" role="button" @click="dialogFormVisible = true" ><i class="fas fa-phone-alt"></i>&nbsp; 用电话号码登录</a><a class="btn btn-primary bg-success d-block btn-facebook btn-user w-100" role="button"><i class="fab fa-weixin"></i>&nbsp; 用微信登录</a>
                                         <hr>
                                     </form>
                                     <div class="text-center"><a class="small" href="forgot-password.html">忘记密码?</a></div>
@@ -46,11 +46,121 @@
                 </div>
             </div>
         </div>
+        <el-dialog title="验证码登录" :visible.sync="dialogFormVisible">
+            <el-form :model="form">
+                <el-form-item label="电话号码" >
+                    <el-input v-model="formData.tel" autocomplete="off"></el-input>
+                </el-form-item>
+
+                <el-form-item label="验证码" >
+                    <el-input placeholder="请输入验证码" v-model="formData.verifyCode" class="input-with-select">
+                        <el-button slot="append" icon="el-icon-phone" @click="sendVerifyCode">获取验证码</el-button>
+                    </el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="submitByVerifyCode">确 定</el-button>
+            </div>
+        </el-dialog>
     </div>
     <script src="assets/bootstrap/js/bootstrap.min.js?h=79ff9637b74326c362fb6f7f5801a7ba"></script>
     <script src="assets/js/script.min.js?h=9d17dc34c7092d02ce216040067c0268"></script>
     <script src="assets/js/vue-2.js"></script>
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="assets/js/vue@2"></script>
+    <script src="assets/js/axios.min.js"></script>
 </body>
 
 </html>
+<script>
+    var app = new Vue({
+        el:'#login',
+        data:{
+            dialogFormVisible: false,
+            formLabelWidth: '120px',
+            userInfo:null,
+            formData: {
+                tel:null,
+                pwd:null,
+                verifyCode:''
+            },
+
+        },
+        methods:{
+            sendVerifyCode(){
+                var _this= this;
+                if(_this.formData.tel.length>10){
+                    axios.get("http://127.0.0.1:8080/users/verifyCode/0/"+_this.formData.tel,{
+                        withCredentials: true
+                    }).then(function (resp) {
+                        // _this.reg_msg = resp.data;
+                        if(resp.data.code==2000){
+                            _this.$message.error(resp.data.msg);
+                        }else if(resp.data.code==2001){
+                            _this.$message.success(resp.data.msg);
+                        }
+
+                    })
+
+                }else {
+                    this.$message.error("请先正确输入电话号码");
+                }
+            },submitByVerifyCode(){
+                axios.post("http://127.0.0.1:8080/users/loginByVerifyCode",this.formData,{withCredentials: true}).then((res)=>{
+                    if(res.data.code==2001){
+                        // 将 userInfo 对象转换为 JSON 字符串
+                        let userInfoString = JSON.stringify(res.data.data);
+
+                        // 将字符串存入 localstorage
+                        localStorage.setItem('userInfo', userInfoString);
+                        this.userInfo=res.data.data;
+
+                        this.$message.success("登录成功,3秒后自动跳转回上一页");
+                        setTimeout("jump()",3000);
+                    }else if(res.data.code==2000){
+                        this.$message.error("登录失败，请检查手机号码与密码");
+                    }else {
+                        this.$message.error(res.data.msg);
+                    }
+                }).catch(()=>{
+                    this.$message.error("请检查您的网络连接");
+                });
+            },
+            submit(){
+                axios.post("http://127.0.0.1:8080/users/loginByPwd",this.formData,{withCredentials: true}).then((res)=>{
+                    if(res.data.code==2001){
+                        // 将 userInfo 对象转换为 JSON 字符串
+                        let userInfoString = JSON.stringify(res.data.data);
+
+                        // 将字符串存入 localstorage
+                        localStorage.setItem('userInfo', userInfoString);
+                        this.userInfo=res.data.data;
+
+                        this.$message.success("登录成功,3秒后自动跳转回上一页");
+                        setTimeout("jump()",3000);
+                    }else if(res.data.code==2000){
+                        this.$message.error("登录失败，请检查手机号码与密码");
+                    }else {
+                        this.$message.error(res.data.msg);
+                    }
+                }).catch(()=>{
+                    this.$message.error("请检查您的网络连接");
+                });
+            }
+
+        },
+        created() {
+            // 从 localstorage 中获取存储的用户信息字符串
+            let userInfoString = localStorage.getItem('userInfo');
+
+            // 将字符串转换回 JavaScript 对象
+            this.userInfo = JSON.parse(userInfoString);
+
+
+        },
+    });
+    function jump() {
+        window.location.replace(document.referrer);
+    }
+</script>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml">
 
 <head>
     <meta charset="utf-8">
@@ -12,6 +12,7 @@
 </head>
 
 <body class="bg-gradient-primary">
+<div id="register">
     <div class="container">
         <div class="card shadow-lg o-hidden border-0 my-5">
             <div class="card-body p-0">
@@ -25,26 +26,28 @@
                                 <h4 class="text-dark mb-4">注册账号!</h4>
                             </div>
                             <form class="user">
+                                <label :style="dispColor">{{reg_msg.msg}}</label>
                                 <div class="row mb-3">
-                                    <div class="col-sm-6 mb-3 mb-sm-0"><input class="form-control form-control-user" type="text" id="exampleFirstName" name="name" placeholder="用户名"></div>
-                                    <div class="col-sm-6"><select class="border rounded-pill form-select form-select-lg">
+                                    <div class="col-sm-6 mb-3 mb-sm-0"><input v-model="user.username" class="form-control form-control-user" type="text" id="exampleFirstName" name="name" placeholder="用户名" ></div>
+                                    <div class="col-sm-6"><select v-model="user.identity" class="border rounded-pill form-select form-select-lg" placeholder="身份">
                                             <optgroup label="身份">
-                                                <option value="0" selected="">学生</option>
+                                                <option value="0" selected="selected">学生</option>
                                                 <option value="3">老师</option>
                                             </optgroup>
                                         </select></div>
                                 </div>
-                                <div class="mb-3"><input class="form-control form-control-user" type="tel" id="exampleInputEmail" aria-describedby="emailHelp" placeholder="手机号码" name="email"></div>
+                                <div class="mb-3"><input v-on:blur="checkTele" v-model="user.tel" class="form-control form-control-user" type="tel" id="exampleInputEmail" aria-describedby="emailHelp" placeholder="手机号码" name="tel"></div>
                                 <div class="row mb-3">
-                                    <div class="col-sm-6 mb-3 mb-sm-0"><input class="form-control form-control-user" type="text" id="exampleFirstName-1" name="verifycode" placeholder="验证码"></div>
+                                    <div class="col-sm-6 mb-3 mb-sm-0"><input v-model="user.verifyCode" class="form-control form-control-user" type="text" id="exampleFirstName-1" name="verifycode" placeholder="验证码"></div>
                                     <div class="col-sm-6">
-                                        <!-- Start: Split Button Primary --><a class="btn btn-primary btn-lg text-center border rounded-pill d-block btn-icon-split" role="button"><span class="text-white-50 icon"><i class="fab fa-viber"></i></span><span class="text-white text">获取验证码</span></a><!-- End: Split Button Primary -->
+                                        <!-- Start: Split Button Primary --><a class="btn btn-primary btn-lg text-center border rounded-pill d-block btn-icon-split" role="button" @click="sendVerifyCode"><span class="text-white-50 icon"><i class="fab fa-viber"></i></span><span class="text-white text">获取验证码</span></a><!-- End: Split Button Primary -->
                                     </div>
                                 </div>
                                 <div class="row mb-3">
-                                    <div class="col-sm-6 mb-3 mb-sm-0"><input class="form-control form-control-user" type="password" id="examplePasswordInput" placeholder="密码" name="password"></div>
-                                    <div class="col-sm-6"><input class="form-control form-control-user" type="password" id="exampleRepeatPasswordInput" placeholder="重复密码" name="重复密码"></div>
-                                </div><button class="btn btn-primary d-block btn-user w-100" type="submit">完成</button>
+                                    <div  class="col-sm-6 mb-3 mb-sm-0"><input v-model="user.pwd" class="form-control form-control-user" type="password" id="examplePasswordInput" placeholder="密码" name="password"></div>
+                                    <div  class="col-sm-6"><input v-model="repwd" v-on:blur="checkPwd" class="form-control form-control-user" type="password" id="exampleRepeatPasswordInput" placeholder="重复密码" name="重复密码"></div>
+                                    <div class="mb-3"><span :style="pwd_err" >{{pwd_err_msg}}</span></div>
+                                </div><button class="btn btn-primary d-block btn-user w-100" type="button"  @click="submit">完成</button>
                                 <hr><a class="btn btn-primary bg-success d-block btn-google btn-user w-100 mb-2" role="button"><i class="fab fa-weixin"></i>&nbsp; 用微信注册</a>
                                 <hr>
                             </form>
@@ -60,6 +63,143 @@
     <script src="assets/js/script.min.js?h=9d17dc34c7092d02ce216040067c0268"></script>
     <script src="assets/js/vue-2.js"></script>
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="assets/js/vue@2"></script>
+    <script src="assets/js/axios.min.js"></script>
+</div>
 </body>
 
 </html>
+<script>
+    var app = new Vue({
+        el:'#register',
+        data: {
+            userInfo: null,
+            message: 'Hello Vue!',
+            pwd_err_msg:'密码长度不足8位',
+            user: {
+                username: '',
+                pwd: '',
+                tel: '',
+                identity: '',
+                verifyCode: '',
+            },
+            repwd:'',
+            reg_msg: {
+                msg: '',
+                data: '',
+                code:0
+            },
+            pwd_err:"visibility:hidden;color: red",
+            dispColor: "color : red"
+        },
+        methods: {
+            sendVerifyCode(){
+                var _this= this;
+                if(this.checkTele()){
+                    axios.get("http://127.0.0.1:8080/users/verifyCode/1/"+_this.user.tel,{
+                        withCredentials: true
+                    }).then(function (resp) {
+                        // _this.reg_msg = resp.data;
+                        if(resp.data.code==2000){
+                            _this.$message.error(resp.data.msg);
+                        }else if(resp.data.code==2001){
+                            _this.$message.success(resp.data.msg);
+                        }
+
+                    })
+
+                }else {
+                    this.$message.error("请先正确输入电话号码");
+                }
+            },
+
+            submit() {
+                var _this = this;
+                console.log(_this.user);
+                if(this.checkPwd()&&this.checkTele()){
+                    axios.post("http://127.0.0.1:8080/users/", _this.user,{withCredentials: true}).then(function (resp) {
+                        _this.reg_msg = resp.data;
+                        if (resp.data.code==2001) {
+
+
+                            _this.dispColor = "color : green";
+                            let userInfoString = JSON.stringify(resp.data.data);
+
+                            // 将字符串存入 localstorage
+                            localStorage.setItem('userInfo', userInfoString);
+                            this.userInfo=resp.data.data;
+                            setTimeout("jump()",3000);
+
+
+
+                        } else {
+                            _this.$message.error(resp.data.msg)
+                            _this.dispColor = "color : red";
+                        }
+                        console.log(resp.data);
+                    }).catch(function (err) {
+                        console.log(err);
+                        this.$message.error("请检查您的网络连接！")
+                    })
+                }
+            },
+            checkTele() {
+                var _this = this;
+                // console.log(_this.user);
+                // console.log(this.user.telephone);
+                if(_this.user.tele!==''){
+                    axios.get("http://127.0.0.1:8080/users/checkTel/"+_this.user.tel).then(function (resp) {
+                        _this.reg_msg = resp.data;
+                        if (resp.data.data) {
+                            _this.dispColor = "color : green";
+                        } else {
+                            _this.dispColor = "color : red";
+                            return false;
+                        }
+                        console.log(resp.data);
+                    }).catch(function (err) {
+                        console.log(err);
+                    })
+                    return true;
+                }else {
+                    _this.reg_msg.data=false;
+                    _this.reg_msg.msg="电话号码未输入";
+                    return false;
+                }
+            },
+            checkPwd() {
+                // console.log("ddd");
+                var _this = this;
+                if(_this.user.pwd===_this.repwd){
+                    _this.pwd_err="visibility:hidden;color: red";
+                }else {
+                    _this.pwd_err_msg="两次密码输入不一致";
+                    _this.pwd_err="color: red";
+                    return false;
+                }
+                if(_this.user.pwd.length>=8){
+                    _this.pwd_err="visibility:hidden;color: red";
+                    return true;
+                }else {
+                    _this.pwd_err_msg="密码长度不足8位";
+                    _this.pwd_err="color: red";
+                    return false;
+                }
+
+
+            }
+
+
+
+        },
+        created() {
+            // 从 localstorage 中获取存储的用户信息字符串
+            let userInfoString = localStorage.getItem('userInfo');
+            // 将字符串转换回 JavaScript 对象
+            this.userInfo = JSON.parse(userInfoString);
+        },
+    })
+    function jump() {
+        window.location.href='/complete-info.html';
+    }
+</script>
